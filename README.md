@@ -1,0 +1,1 @@
+# TermNote - A note taking application, directly in your terminal!
