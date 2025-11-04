@@ -1,5 +1,5 @@
 build:
 	@go build -o termnote .
 
-run:
+run: build
 	@./termnote
