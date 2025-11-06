@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,7 +13,7 @@ import (
 
 var (
 	cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#7D56F4"))
-	vaultDir string
+	vaultDir    string
 )
 
 func init() {
@@ -25,6 +26,7 @@ func init() {
 
 type model struct {
 	newFileInput           textinput.Model
+	noteTextArea           textarea.Model
 	createFileInputVisible bool
 	currentFile            *os.File
 }
@@ -48,7 +50,40 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+n":
 			m.createFileInputVisible = true
 			return m, nil
+		case "ctrl+s":
+			if m.currentFile == nil {
+				break
+			}
+
+			if err := m.currentFile.Truncate(0); err != nil {
+				fmt.Println("Cannot save the file :(")
+				return m, nil
+			}
+
+			if _, err := m.currentFile.Seek(0, 0); err != nil {
+				fmt.Println("Cannot save the file :(")
+				return m, nil
+			}
+
+			// write the content of the text area to the file
+			if _, err := m.currentFile.WriteString(m.noteTextArea.Value()); err != nil {
+				fmt.Println("Cannot write to the file :(")
+				return m, nil
+			}
+
+			if err := m.currentFile.Close(); err != nil {
+				fmt.Println("Cannot close the file :(")
+			}
+
+			m.currentFile = nil
+			m.noteTextArea.SetValue("")
+
+			return m, nil
 		case "enter":
+			if m.currentFile != nil {
+				break
+			}
+			
 			fileName := m.newFileInput.Value()
 			if fileName != "" {
 				filePath := fmt.Sprintf("%s/%s.md", vaultDir, fileName)
@@ -74,6 +109,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.newFileInput, cmd = m.newFileInput.Update(msg)
 	}
 
+	if m.currentFile != nil {
+		m.noteTextArea, cmd = m.noteTextArea.Update(msg)
+	}
+
 	return m, cmd
 }
 
@@ -96,6 +135,10 @@ func (m model) View() string {
 		view = m.newFileInput.View()
 	}
 
+	if m.currentFile != nil {
+		view = m.noteTextArea.View()
+	}
+
 	return fmt.Sprintf("%s\n\n%s\n\n%s", welcome, view, help)
 }
 
@@ -114,9 +157,15 @@ func initializeModel() model {
 	ti.Cursor.Style = cursorStyle
 	ti.PromptStyle = cursorStyle
 
+	// initialize note text area
+	ta := textarea.New()
+	ta.Placeholder = "Start writing your note..."
+	ta.Focus()
+
 	return model{
 		newFileInput:           ti,
 		createFileInputVisible: false,
+		noteTextArea:           ta,
 	}
 }
 func main() {
