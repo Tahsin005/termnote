@@ -149,3 +149,10 @@ source ~/.zshrc
 ```
 termnote
 ```
+
+### Exampls
+
+<img src="https://github.com/Tahsin005/termnote/blob/main/assets/ss-1.png">
+<img src="https://github.com/Tahsin005/termnote/blob/main/assets/ss-2.png">
+<img src="https://github.com/Tahsin005/termnote/blob/main/assets/ss-3.png">
+<img src="https://github.com/Tahsin005/termnote/blob/main/assets/ss-4.png">
